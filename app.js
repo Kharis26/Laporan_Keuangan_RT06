@@ -1,4 +1,3 @@
-
 (() => {
   "use strict";
 
@@ -259,23 +258,34 @@
     });
   }
 
+  // Dashboard: saldo kas saat ini tidak mengikuti filter tabel.
+  // Pemasukan, pengeluaran, dan jumlah transaksi mengikuti filter.
   function renderStats(rows) {
-    const valid = rows.filter((item) => item.status === "sah");
+    const valid = rows.filter(
+      (item) => item.status === "sah"
+    );
 
     const income = sumCash(valid, "masuk");
     const expense = sumCash(valid, "keluar");
-    const net = income - expense;
+
+    // Menghitung saldo awal + seluruh pemasukan - pengeluaran sah.
+    // Gunakan state.cash, bukan rows, agar filter tanggal/kategori
+    // tidak mengubah saldo kas aktual.
+    const currentBalance = balance(state.cash);
 
     if ($("statBalance")) {
-      $("statBalance").textContent = rupiah(net);
+      $("statBalance").textContent =
+        rupiah(currentBalance);
     }
 
     if ($("statIncome")) {
-      $("statIncome").textContent = rupiah(income);
+      $("statIncome").textContent =
+        rupiah(income);
     }
 
     if ($("statExpense")) {
-      $("statExpense").textContent = rupiah(expense);
+      $("statExpense").textContent =
+        rupiah(expense);
     }
 
     if ($("statCount")) {
@@ -291,7 +301,7 @@
         balanceCard.querySelector(".stat-label");
 
       if (label) {
-        label.textContent = "Selisih bersih terfilter";
+        label.textContent = "Saldo kas saat ini";
       }
     }
   }
