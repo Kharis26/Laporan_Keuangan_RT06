@@ -1,3 +1,4 @@
+JavaScript
 
 (() => {
   "use strict";
@@ -30,14 +31,32 @@
       maximumFractionDigits: 0
     }).format(Number(value) || 0);
 
-  const dateText = (value) =>
-    value
-      ? new Intl.DateTimeFormat("id-ID", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric"
-        }).format(new Date(value))
-      : "—";
+  function localDateString(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function dateText(value) {
+    if (!value) return "—";
+
+    const parts = String(value).slice(0, 10).split("-");
+
+    if (parts.length !== 3) return "—";
+
+    const date = new Date(
+      Number(parts[0]),
+      Number(parts[1]) - 1,
+      Number(parts[2])
+    );
+
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    }).format(date);
+  }
 
   const escapeHtml = (value) =>
     String(value ?? "").replace(/[&<>"']/g, (c) => ({
@@ -49,7 +68,7 @@
     }[c]));
 
   const today = new Date();
-  const monthNow = today.toISOString().slice(0, 7);
+  const monthNow = localDateString(today).slice(0, 7);
   const yearNow = String(today.getFullYear());
 
   function profileRoles() {
@@ -78,7 +97,6 @@
   const isTreasurer = () =>
     profileRoles().includes("bendahara");
 
-  // Admin dan Bendahara boleh mengelola transaksi kas.
   const canEditCash = () =>
     isAdmin() || isTreasurer();
 
@@ -114,10 +132,6 @@
       : value === "keluar"
         ? "Pengeluaran"
         : value || "—";
-  }
-
-  function directionClass(value) {
-    return value === "masuk" ? "in" : "out";
   }
 
   function isOpening(item) {
@@ -176,12 +190,12 @@
       window.history.replaceState(null, "", `#${name}`);
     }
 
+    if (name === "cash") renderCash();
     if (name === "monthly") renderMonthly();
     if (name === "yearly") renderYearly();
     if (name === "settings") renderSettings();
   }
 
-  // Pengaturan hak akses tampilan.
   function renderMode() {
     const admin = isAdmin();
     const finance = canEditCash();
@@ -205,7 +219,6 @@
         : "Mode baca aktif. Anda dapat melihat arus kas dan LPJ tanpa mengubah data.";
     }
 
-    // Menu pengaturan tetap khusus Admin.
     show("settingsAdminOnly", admin);
     show("settingsReadOnly", !admin);
 
@@ -218,13 +231,43 @@
     }
   }
 
-  function renderStats() {
-    const income = sumCash(state.cash, "masuk");
-    const expense = sumCash(state.cash, "keluar");
+  // Filter transaksi berdasarkan seluruh pilihan di toolbar.
+  function filteredCash() {
+    const term = (
+      $("cashSearch")?.value || ""
+    ).trim().toLocaleLowerCase("id-ID");
+
+    const filter = $("cashFilter")?.value || "";
+    const category = $("cashCategoryFilter")?.value || "";
+    const start = $("cashStartDate")?.value || "";
+    const end = $("cashEndDate")?.value || "";
+
+    return state.cash.filter((item) => {
+      const hay = `${item.kategori || ""} ${
+        item.keterangan || ""
+      }`.toLocaleLowerCase("id-ID");
+
+      const date = String(item.tanggal || "").slice(0, 10);
+
+      return (
+        (!term || hay.includes(term)) &&
+        (!filter || item.arah === filter) &&
+        (!category || item.kategori === category) &&
+        (!start || date >= start) &&
+        (!end || date <= end)
+      );
+    });
+  }
+
+  function renderStats(rows) {
+    const valid = rows.filter((item) => item.status === "sah");
+
+    const income = sumCash(valid, "masuk");
+    const expense = sumCash(valid, "keluar");
+    const net = income - expense;
 
     if ($("statBalance")) {
-      $("statBalance").textContent =
-        rupiah(balance(state.cash));
+      $("statBalance").textContent = rupiah(net);
     }
 
     if ($("statIncome")) {
@@ -237,41 +280,63 @@
 
     if ($("statCount")) {
       $("statCount").textContent =
-        state.cash.length.toLocaleString("id-ID");
+        valid.length.toLocaleString("id-ID");
+    }
+
+    // Tegaskan bahwa angka pertama adalah selisih transaksi terfilter,
+    // bukan saldo resmi keseluruhan buku kas.
+    const balanceCard = $("statBalance")?.closest(".stat-card");
+
+    if (balanceCard) {
+      const label = balanceCard.querySelector("span, p, small");
+
+      if (label) {
+        label.textContent = "Selisih bersih terfilter";
+      }
     }
   }
 
-  function filteredCash() {
-    const term = (
-      $("cashSearch")?.value || ""
-    ).trim().toLocaleLowerCase("id-ID");
+  function renderCashCategoryFilter() {
+    const select = $("cashCategoryFilter");
 
-    const month = $("cashMonth")?.value || "";
-    const filter = $("cashFilter")?.value || "";
-    const start = $("cashStartDate")?.value || "";
-    const end = $("cashEndDate")?.value || "";
+    if (!select) return;
 
-    return state.cash.filter((item) => {
-      const hay = `${item.kategori || ""} ${
-        item.keterangan || ""
-      }`.toLocaleLowerCase("id-ID");
+    const previous = select.value;
 
-      const date = String(item.tanggal || "");
+    const names = new Set();
 
-      return (
-        (!term || hay.includes(term)) &&
-        (!month || date.startsWith(month)) &&
-        (!filter || item.arah === filter) &&
-        (!start || date >= start) &&
-        (!end || date <= end)
-      );
+    state.categories.forEach((item) => {
+      if (item.nama) names.add(item.nama);
     });
+
+    // Kategori transaksi lama tetap bisa difilter.
+    state.cash.forEach((item) => {
+      if (item.kategori) names.add(item.kategori);
+    });
+
+    const sorted = [...names].sort((a, b) =>
+      a.localeCompare(b, "id")
+    );
+
+    select.innerHTML =
+      `<option value="">Semua kategori</option>` +
+      sorted.map((name) => `
+        <option value="${escapeHtml(name)}">
+          ${escapeHtml(name)}
+        </option>
+      `).join("");
+
+    if (sorted.includes(previous)) {
+      select.value = previous;
+    }
   }
 
   function renderCash() {
-    renderStats();
+    renderCashCategoryFilter();
 
     const rows = filteredCash();
+
+    renderStats(rows);
 
     if ($("cashRows")) {
       $("cashRows").innerHTML = rows.length
@@ -323,14 +388,18 @@
     }
 
     if ($("cashState")) {
-      $("cashState").textContent = state.cash.length
-        ? `${rows.length} transaksi ditampilkan.`
-        : "Belum ada transaksi kas.";
+      const invalidRange =
+        $("cashStartDate")?.value &&
+        $("cashEndDate")?.value &&
+        $("cashStartDate").value > $("cashEndDate").value;
+
+      $("cashState").textContent = invalidRange
+        ? "Tanggal mulai tidak boleh setelah tanggal akhir."
+        : `${rows.length} transaksi ditampilkan dari ${state.cash.length} transaksi.`;
     }
 
     const start = $("cashStartDate")?.value || "";
     const end = $("cashEndDate")?.value || "";
-    const month = $("cashMonth")?.value || "";
 
     if ($("cashPrintPeriod")) {
       $("cashPrintPeriod").textContent =
@@ -340,10 +409,42 @@
             } s.d. ${
               end ? dateText(end) : "akhir"
             }`
-          : month
-            ? `Periode tampilan: ${month}`
-            : "Periode cetak: semua tanggal";
+          : "Periode cetak: semua tanggal";
     }
+  }
+
+  // Preset periode.
+  function applyPeriodPreset(value) {
+    const now = new Date();
+    const todayString = localDateString(now);
+
+    const start = $("cashStartDate");
+    const end = $("cashEndDate");
+
+    if (!start || !end) return;
+
+    if (value === "all") {
+      start.value = "";
+      end.value = "";
+    } else if (value === "today") {
+      start.value = todayString;
+      end.value = todayString;
+    } else if (value === "month") {
+      start.value = `${todayString.slice(0, 7)}-01`;
+
+      const lastDay = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0
+      );
+
+      end.value = localDateString(lastDay);
+    } else if (value === "year") {
+      start.value = `${now.getFullYear()}-01-01`;
+      end.value = `${now.getFullYear()}-12-31`;
+    }
+
+    renderCash();
   }
 
   function validTransactions(items) {
@@ -377,8 +478,6 @@
 
       const date = String(item.tanggal || "");
 
-      // Saldo pembukaan berlaku pada tanggal yang dipilih.
-      // Transaksi biasa baru dihitung mulai setelah tanggal awal periode.
       return isOpening(item)
         ? date <= periodStart
         : date < periodStart;
@@ -627,7 +726,7 @@
             <th>Bulan</th>
             <th>Pemasukan</th>
             <th>Pengeluaran</th>
-            <th>Selisih</th>
+            <th>Saldo akhir</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -665,7 +764,6 @@
       </p>`;
   }
 
-  // Fungsi untuk membuat ulang pilihan kategori kas.
   function renderCategories() {
     const select = $("cashCategory");
 
@@ -729,11 +827,7 @@
     const pageSize = 1000;
     const all = [];
 
-    for (
-      let offset = 0;
-      ;
-      offset += pageSize
-    ) {
+    for (let offset = 0; ; offset += pageSize) {
       const result = await state.supabase
         .from("transaksi_kas")
         .select(
@@ -818,7 +912,7 @@
       state.categories = categoriesResult.data || [];
     } else if ($("cashCategoryStatus")) {
       $("cashCategoryStatus").textContent =
-        "Daftar akun belum tersedia. Jalankan migration setup_settings.sql di Supabase.";
+        "Daftar akun belum tersedia. Periksa tabel kategori_kas di Supabase.";
     }
 
     renderCash();
@@ -944,12 +1038,11 @@
     }
 
     $("cashEditId").value = item.id;
-    $("cashDate").value = item.tanggal || "";
+    $("cashDate").value = String(item.tanggal || "").slice(0, 10);
     $("cashDirection").value = item.arah;
 
     renderCategories();
 
-    // Pertahankan kategori lama jika sudah tidak aktif.
     if (
       ![...$("cashCategory").options].some(
         (option) => option.value === item.kategori
@@ -1013,8 +1106,7 @@
     $("cashForm")?.reset();
 
     if ($("cashDate")) {
-      $("cashDate").value =
-        new Date().toISOString().slice(0, 10);
+      $("cashDate").value = localDateString();
     }
 
     setMessage("cashFormMessage", "");
@@ -1023,7 +1115,6 @@
   async function submitCash(event) {
     event.preventDefault();
 
-    // Admin dan Bendahara boleh mencatat atau mengoreksi kas.
     if (!canEditCash()) return;
 
     const editId = $("cashEditId").value;
@@ -1094,41 +1185,47 @@
         : "Menyimpan transaksi…"
     );
 
-    const {
-      error
-    } = editId
-      ? await state.supabase.rpc(
-          "admin_koreksi_transaksi_kas",
-          payload
-        )
-      : await state.supabase.rpc(
-          "catat_transaksi_kas",
-          payload
+    try {
+      const { error } = editId
+        ? await state.supabase.rpc(
+            "admin_koreksi_transaksi_kas",
+            payload
+          )
+        : await state.supabase.rpc(
+            "catat_transaksi_kas",
+            payload
+          );
+
+      if (error) {
+        setMessage(
+          "cashFormMessage",
+          error.message || "Transaksi gagal disimpan.",
+          "error"
         );
 
-    button.disabled = false;
+        return;
+      }
 
-    if (error) {
+      cancelEditCash();
+
       setMessage(
         "cashFormMessage",
-        error.message || "Transaksi gagal disimpan.",
-        "error"
+        editId
+          ? "Koreksi berhasil disimpan dan dicatat dalam riwayat."
+          : "Transaksi berhasil disimpan.",
+        "success"
       );
 
-      return;
+      await loadData(state.sessionVersion);
+    } catch (error) {
+      setMessage(
+        "cashFormMessage",
+        error.message || "Terjadi kesalahan saat menyimpan.",
+        "error"
+      );
+    } finally {
+      button.disabled = false;
     }
-
-    cancelEditCash();
-
-    setMessage(
-      "cashFormMessage",
-      editId
-        ? "Koreksi berhasil disimpan dan dicatat dalam riwayat."
-        : "Transaksi berhasil disimpan.",
-      "success"
-    );
-
-    await loadData(state.sessionVersion);
   }
 
   async function submitSettings(event) {
@@ -1154,36 +1251,35 @@
       "Menyimpan…"
     );
 
-    const {
-      data,
-      error
-    } = await state.supabase.rpc(
-      "admin_simpan_pengaturan",
-      payload
-    );
-
-    button.disabled = false;
-
-    if (error) {
-      setMessage(
-        "settingsFormMessage",
-        error.message,
-        "error"
+    try {
+      const { data, error } = await state.supabase.rpc(
+        "admin_simpan_pengaturan",
+        payload
       );
 
-      return;
+      if (error) {
+        setMessage(
+          "settingsFormMessage",
+          error.message,
+          "error"
+        );
+
+        return;
+      }
+
+      state.settings = data || payload;
+
+      setMessage(
+        "settingsFormMessage",
+        "Identitas LPJ berhasil disimpan.",
+        "success"
+      );
+
+      renderMonthly();
+      renderYearly();
+    } finally {
+      button.disabled = false;
     }
-
-    state.settings = data || payload;
-
-    setMessage(
-      "settingsFormMessage",
-      "Identitas LPJ berhasil disimpan.",
-      "success"
-    );
-
-    renderMonthly();
-    renderYearly();
   }
 
   async function submitOpening(event) {
@@ -1200,6 +1296,7 @@
 
     if (
       !payload.p_tanggal ||
+      !Number.isSafeInteger(payload.p_nominal) ||
       payload.p_nominal <= 0
     ) {
       setMessage(
@@ -1229,34 +1326,34 @@
       "Menyimpan…"
     );
 
-    const {
-      error
-    } = await state.supabase.rpc(
-      "admin_set_saldo_awal",
-      payload
-    );
-
-    button.disabled = false;
-
-    if (error) {
-      setMessage(
-        "openingFormMessage",
-        error.message,
-        "error"
+    try {
+      const { error } = await state.supabase.rpc(
+        "admin_set_saldo_awal",
+        payload
       );
 
-      return;
+      if (error) {
+        setMessage(
+          "openingFormMessage",
+          error.message,
+          "error"
+        );
+
+        return;
+      }
+
+      setMessage(
+        "openingFormMessage",
+        "Saldo awal berhasil ditetapkan.",
+        "success"
+      );
+
+      event.currentTarget.reset();
+
+      await loadData(state.sessionVersion);
+    } finally {
+      button.disabled = false;
     }
-
-    setMessage(
-      "openingFormMessage",
-      "Saldo awal berhasil ditetapkan.",
-      "success"
-    );
-
-    event.currentTarget.reset();
-
-    await loadData(state.sessionVersion);
   }
 
   async function submitCategory(event) {
@@ -1279,34 +1376,34 @@
       "Menyimpan…"
     );
 
-    const {
-      error
-    } = await state.supabase.rpc(
-      "admin_tambah_kategori",
-      payload
-    );
-
-    button.disabled = false;
-
-    if (error) {
-      setMessage(
-        "categoryFormMessage",
-        error.message,
-        "error"
+    try {
+      const { error } = await state.supabase.rpc(
+        "admin_tambah_kategori",
+        payload
       );
 
-      return;
+      if (error) {
+        setMessage(
+          "categoryFormMessage",
+          error.message,
+          "error"
+        );
+
+        return;
+      }
+
+      setMessage(
+        "categoryFormMessage",
+        "Kategori berhasil ditambahkan.",
+        "success"
+      );
+
+      event.currentTarget.reset();
+
+      await loadData(state.sessionVersion);
+    } finally {
+      button.disabled = false;
     }
-
-    setMessage(
-      "categoryFormMessage",
-      "Kategori berhasil ditambahkan.",
-      "success"
-    );
-
-    event.currentTarget.reset();
-
-    await loadData(state.sessionVersion);
   }
 
   async function submitReset(event) {
@@ -1345,39 +1442,130 @@
       "Menghapus data uji coba…"
     );
 
-    const {
-      data,
-      error
-    } = await state.supabase.rpc(
-      "admin_reset_data_uji",
-      {
-        p_konfirmasi: confirmation
+    try {
+      const { data, error } = await state.supabase.rpc(
+        "admin_reset_data_uji",
+        {
+          p_konfirmasi: confirmation
+        }
+      );
+
+      if (error) {
+        setMessage(
+          "resetFormMessage",
+          error.message,
+          "error"
+        );
+
+        return;
       }
-    );
 
-    button.disabled = false;
-
-    if (error) {
       setMessage(
         "resetFormMessage",
-        error.message,
+        `Reset selesai. ${
+          Number(data?.transaksi_kas_dihapus || 0)
+        } transaksi kas dihapus.`,
+        "success"
+      );
+
+      event.currentTarget.reset();
+
+      await loadData(state.sessionVersion);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  // Perlindungan teks CSV dari formula spreadsheet.
+  function csvCell(value) {
+    let text = String(value ?? "");
+
+    if (/^[=+\-@\t\r]/.test(text)) {
+      text = "'" + text;
+    }
+
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  function exportCashCSV() {
+    const start = $("cashStartDate")?.value || "";
+    const end = $("cashEndDate")?.value || "";
+
+    if (start && end && start > end) {
+      setMessage(
+        "cashState",
+        "Tanggal mulai tidak boleh setelah tanggal akhir.",
         "error"
       );
 
       return;
     }
 
-    setMessage(
-      "resetFormMessage",
-      `Reset selesai. ${
-        Number(data?.transaksi_kas_dihapus || 0)
-      } transaksi kas dihapus.`,
-      "success"
+    const rows = filteredCash();
+
+    if (!rows.length) {
+      setMessage(
+        "cashState",
+        "Tidak ada transaksi untuk diekspor.",
+        "error"
+      );
+
+      return;
+    }
+
+    const header = [
+      "Tanggal",
+      "Jenis",
+      "Kategori",
+      "Nominal",
+      "Keterangan",
+      "Status",
+      "Saldo Awal"
+    ];
+
+    const lines = [
+      header.map(csvCell).join(";"),
+      ...rows.map((item) => [
+        String(item.tanggal || "").slice(0, 10),
+        isOpening(item)
+          ? "Saldo awal"
+          : directionLabel(item.arah),
+        item.kategori || "",
+        Number(item.nominal || 0),
+        item.keterangan || "",
+        item.status || "",
+        isOpening(item) ? "Ya" : "Tidak"
+      ].map(csvCell).join(";"))
+    ];
+
+    const csv = "\uFEFF" + lines.join("\r\n");
+
+    const blob = new Blob(
+      [csv],
+      { type: "text/csv;charset=utf-8;" }
     );
 
-    event.currentTarget.reset();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
 
-    await loadData(state.sessionVersion);
+    link.href = url;
+    link.download =
+      `arus-kas-RT06-${localDateString()}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.setTimeout(
+      () => URL.revokeObjectURL(url),
+      1000
+    );
+
+    setMessage(
+      "cashState",
+      `${rows.length} transaksi berhasil disiapkan untuk ekspor.`,
+      "success"
+    );
   }
 
   function printCash() {
@@ -1398,7 +1586,6 @@
     }
 
     view("cash");
-
     window.print();
   }
 
@@ -1437,39 +1624,40 @@
           "Memeriksa akun…"
         );
 
-        const {
-          error
-        } = await state.supabase.auth.signInWithPassword({
-          email,
-          password
-        });
+        try {
+          const { error } =
+            await state.supabase.auth.signInWithPassword({
+              email,
+              password
+            });
 
-        if (button) {
-          button.disabled = false;
-          button.textContent = "Masuk";
-        }
+          if (error) {
+            const raw =
+              String(error.message || "").toLowerCase();
 
-        if (error) {
-          const raw =
-            String(error.message || "").toLowerCase();
+            const message =
+              raw.includes("email not confirmed")
+                ? "Email belum dikonfirmasi di Supabase Authentication."
+                : raw.includes("invalid login credentials")
+                  ? "Email atau kata sandi tidak cocok. Periksa kembali akun di Supabase Authentication."
+                  : raw.includes("too many requests")
+                    ? "Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi."
+                    : `Login gagal: ${
+                        error.message ||
+                        "periksa email dan kata sandi."
+                      }`;
 
-          const message =
-            raw.includes("email not confirmed")
-              ? "Email belum dikonfirmasi di Supabase Authentication."
-              : raw.includes("invalid login credentials")
-                ? "Email atau kata sandi tidak cocok. Periksa kembali akun di Supabase Authentication."
-                : raw.includes("too many requests")
-                  ? "Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi."
-                  : `Login gagal: ${
-                      error.message ||
-                      "periksa email dan kata sandi."
-                    }`;
-
-          setMessage(
-            "loginMessage",
-            message,
-            "error"
-          );
+            setMessage(
+              "loginMessage",
+              message,
+              "error"
+            );
+          }
+        } finally {
+          if (button) {
+            button.disabled = false;
+            button.textContent = "Masuk";
+          }
         }
       }
     );
@@ -1488,16 +1676,30 @@
       }
     );
 
-    [
-      "cashSearch",
-      "cashMonth",
-      "cashFilter",
-      "cashStartDate",
-      "cashEndDate"
-    ].forEach((id) => {
-      $(id)?.addEventListener("input", renderCash);
-      $(id)?.addEventListener("change", renderCash);
+    $("cashSearch")?.addEventListener("input", renderCash);
+    $("cashFilter")?.addEventListener("change", renderCash);
+    $("cashCategoryFilter")?.addEventListener("change", renderCash);
+
+    $("cashStartDate")?.addEventListener("change", () => {
+      if ($("cashPeriodPreset")) {
+        $("cashPeriodPreset").value = "custom";
+      }
+
+      renderCash();
     });
+
+    $("cashEndDate")?.addEventListener("change", () => {
+      if ($("cashPeriodPreset")) {
+        $("cashPeriodPreset").value = "custom";
+      }
+
+      renderCash();
+    });
+
+    $("cashPeriodPreset")?.addEventListener(
+      "change",
+      (event) => applyPeriodPreset(event.target.value)
+    );
 
     $("cashRows")?.addEventListener(
       "click",
@@ -1521,14 +1723,19 @@
       renderMonthly
     );
 
+    $("yearlyPeriod")?.addEventListener(
+      "input",
+      renderYearly
+    );
+
     $("printCash")?.addEventListener(
       "click",
       printCash
     );
 
-    $("yearlyPeriod")?.addEventListener(
-      "input",
-      renderYearly
+    $("exportCash")?.addEventListener(
+      "click",
+      exportCashCSV
     );
 
     $("printMonthly")?.addEventListener(
@@ -1567,8 +1774,7 @@
     );
 
     if ($("cashDate")) {
-      $("cashDate").value =
-        new Date().toISOString().slice(0, 10);
+      $("cashDate").value = localDateString();
     }
 
     if ($("monthlyPeriod")) {
@@ -1577,6 +1783,10 @@
 
     if ($("yearlyPeriod")) {
       $("yearlyPeriod").value = yearNow;
+    }
+
+    if ($("cashPeriodPreset")) {
+      $("cashPeriodPreset").value = "all";
     }
 
     window.addEventListener(
