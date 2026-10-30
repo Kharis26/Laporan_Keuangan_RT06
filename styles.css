@@ -14,8 +14,10 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.topbar,.shell{width:100%;
 
 @media print{#cashRows .cash-edit-button,#cashRows .hint{display:none!important}#view-cash th:last-child,#view-cash td:last-child{display:none!important}}
 
+
 /* =========================================
-   CETAK LPJ TAHUNAN - FORMAT A4
+   CETAK LAPORAN PERTANGGUNGJAWABAN
+   BULANAN DAN TAHUNAN - FORMAT A4
    ========================================= */
 
 @page {
@@ -44,15 +46,42 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.topbar,.shell{width:100%;
   footer,
   .button,
   #view-cash,
-  #view-monthly,
-  #view-settings {
+  #view-settings,
+  #view-monthly .section-heading,
+  #view-yearly .section-heading {
     display: none !important;
   }
 
   .shell,
-  #appPanel,
-  #view-yearly,
+  #appPanel {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  /* Tampilkan hanya laporan yang sedang dipilih */
+  #view-monthly.hidden,
+  #view-yearly.hidden {
+    display: none !important;
+  }
+
+  #view-monthly:not(.hidden),
+  #view-yearly:not(.hidden) {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #view-monthly .report-panel,
   #view-yearly .report-panel,
+  #monthlyReport,
   #yearlyReport {
     display: block !important;
     width: 100% !important;
@@ -65,17 +94,8 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.topbar,.shell{width:100%;
     background: #fff !important;
   }
 
-  #view-yearly .section-heading {
-    margin-bottom: 12px !important;
-  }
-
-  #view-yearly .section-heading h2 {
-    font-size: 17pt !important;
-    color: #142b45 !important;
-  }
-
   .report-title {
-    text-align: center;
+    text-align: center !important;
     border-bottom: 2px solid #142b45 !important;
     padding-bottom: 10px !important;
     margin-bottom: 12px !important;
@@ -99,7 +119,8 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.topbar,.shell{width:100%;
   }
 
   .report-stats {
-    grid-template-columns: repeat(2, 1fr) !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 8px !important;
     margin: 12px 0 18px !important;
     break-inside: avoid;
@@ -155,13 +176,22 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.topbar,.shell{width:100%;
     break-inside: avoid;
   }
 
-  /* Rekap kategori dimulai di halaman kedua */
-  .report-columns {
+  /* Bulanan: kategori dan transaksi mengikuti alur normal */
+  #view-monthly .report-columns {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 15px !important;
-    margin-top: 0 !important;
-    break-before: page;
+    margin: 18px 0 !important;
+    break-before: auto !important;
+  }
+
+  /* Tahunan: rekap kategori dimulai di halaman kedua */
+  #view-yearly .report-columns {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 15px !important;
+    margin: 0 0 12px !important;
+    break-before: page !important;
   }
 
   .report-columns > div {
@@ -174,7 +204,37 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.topbar,.shell{width:100%;
     margin-top: 12px !important;
   }
 
-  .report-signers {
-    text-align: center;
+  .report-approval {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-top: 18px !important;
+    font-size: 9pt !important;
+  }
+
+  .report-signature-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 30px !important;
+    text-align: center !important;
+    margin-top: 15px !important;
+  }
+
+  .report-signature {
+    text-align: center !important;
+    break-inside: avoid;
+  }
+
+  .report-signature-space {
+    height: 65px !important;
+  }
+
+  .report-signature strong {
+    display: block;
+    text-decoration: underline;
+  }
+
+  .report-approval-date {
+    text-align: right !important;
   }
 }
+
