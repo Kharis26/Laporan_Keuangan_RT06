@@ -601,7 +601,7 @@
     if (!$("monthlyReport")) return;
 
     $("monthlyReport").innerHTML =
-      reportHead("LPJ Bulanan", period, totals) +
+      reportHead("LAPORAN PERTANGGUNGJAWABAN BULANAN", period, totals) +
 
       `<div class="report-columns">
         <div>
@@ -731,7 +731,7 @@
     const printDate = dateText(localDateString());
 
     $("yearlyReport").innerHTML =
-      reportHead("LPJ Tahunan", String(year), totals) +
+      reportHead("LAPORAN PERTANGGUNGJAWABAN TAHUNAN", String(year), totals) +
 
       `<h3>Ringkasan per bulan</h3>
 
