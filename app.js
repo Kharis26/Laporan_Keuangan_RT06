@@ -1,3 +1,4 @@
+
 (() => {
   "use strict";
 
@@ -169,6 +170,60 @@
       sumCash(items, "keluar");
   }
 
+  // SALDO BERJALAN
+  // Menghitung saldo secara kronologis berdasarkan seluruh transaksi.
+  // Hasilnya disimpan berdasarkan ID agar tetap benar saat tabel difilter.
+
+  function calculateRunningBalances(items) {
+    const sorted = [...items].sort((a, b) => {
+      const dateA = String(a.tanggal || "").slice(0, 10);
+      const dateB = String(b.tanggal || "").slice(0, 10);
+
+      if (dateA !== dateB) {
+        return dateA.localeCompare(dateB);
+      }
+
+      // Saldo awal diproses terlebih dahulu pada tanggal yang sama.
+      const openingA = isOpening(a) ? 0 : 1;
+      const openingB = isOpening(b) ? 0 : 1;
+
+      if (openingA !== openingB) {
+        return openingA - openingB;
+      }
+
+      // Urutan transaksi pada tanggal yang sama.
+      const createdA = String(a.created_at || "");
+      const createdB = String(b.created_at || "");
+
+      if (createdA !== createdB) {
+        return createdA.localeCompare(createdB);
+      }
+
+      return String(a.id).localeCompare(String(b.id));
+    });
+
+    let currentBalance = 0;
+    const balances = new Map();
+
+    sorted.forEach((item) => {
+      if (item.status === "sah") {
+        const nominal = Number(item.nominal || 0);
+
+        if (isOpening(item)) {
+          currentBalance += nominal;
+        } else if (item.arah === "masuk") {
+          currentBalance += nominal;
+        } else if (item.arah === "keluar") {
+          currentBalance -= nominal;
+        }
+      }
+
+      balances.set(String(item.id), currentBalance);
+    });
+
+    return balances;
+  }
+
   function view(name) {
     document.querySelectorAll(".view").forEach((node) => {
       node.classList.toggle(
@@ -260,6 +315,7 @@
 
   // Dashboard: saldo kas saat ini tidak mengikuti filter tabel.
   // Pemasukan, pengeluaran, dan jumlah transaksi mengikuti filter.
+
   function renderStats(rows) {
     const valid = rows.filter(
       (item) => item.status === "sah"
@@ -268,9 +324,6 @@
     const income = sumCash(valid, "masuk");
     const expense = sumCash(valid, "keluar");
 
-    // Menghitung saldo awal + seluruh pemasukan - pengeluaran sah.
-    // Gunakan state.cash, bukan rows, agar filter tanggal/kategori
-    // tidak mengubah saldo kas aktual.
     const currentBalance = balance(state.cash);
 
     if ($("statBalance")) {
@@ -346,6 +399,10 @@
 
     renderStats(rows);
 
+    // Hitung saldo dari seluruh transaksi, bukan hanya hasil filter.
+    const runningBalances =
+      calculateRunningBalances(state.cash);
+
     if ($("cashRows")) {
       $("cashRows").innerHTML = rows.length
         ? rows.map((item) => {
@@ -369,6 +426,9 @@
                       : "—"
                 }</span>`;
 
+            const runningBalance =
+              runningBalances.get(String(item.id)) ?? 0;
+
             return `
               <tr>
                 <td>${escapeHtml(dateText(item.tanggal))}</td>
@@ -384,12 +444,17 @@
                 <td><strong>${escapeHtml(item.kategori)}</strong></td>
                 <td>${escapeHtml(rupiah(item.nominal))}</td>
                 <td>${escapeHtml(item.keterangan || "—")}</td>
+                <td>
+                  <strong class="running-balance">
+                    ${escapeHtml(rupiah(runningBalance))}
+                  </strong>
+                </td>
                 <td>${action}</td>
               </tr>
             `;
           }).join("")
         : `<tr>
-             <td colspan="6" class="empty-cell">
+             <td colspan="7" class="empty-cell">
                Belum ada transaksi pada pilihan ini.
              </td>
            </tr>`;
@@ -1549,6 +1614,11 @@
       return;
     }
 
+    // Perhitungan memakai seluruh transaksi agar saldo
+    // tidak berubah akibat filter tabel.
+    const runningBalances =
+      calculateRunningBalances(state.cash);
+
     const header = [
       "Tanggal",
       "Jenis",
@@ -1556,11 +1626,13 @@
       "Nominal",
       "Keterangan",
       "Status",
-      "Saldo Awal"
+      "Saldo Awal",
+      "Saldo Berjalan"
     ];
 
     const lines = [
       header.map(csvCell).join(";"),
+
       ...rows.map((item) => [
         String(item.tanggal || "").slice(0, 10),
         isOpening(item)
@@ -1570,7 +1642,8 @@
         Number(item.nominal || 0),
         item.keterangan || "",
         item.status || "",
-        isOpening(item) ? "Ya" : "Tidak"
+        isOpening(item) ? "Ya" : "Tidak",
+        runningBalances.get(String(item.id)) ?? 0
       ].map(csvCell).join(";"))
     ];
 
