@@ -16,7 +16,8 @@
 
   <title>Laporan Keuangan Digital RT 06 RW 08</title>
 
-  <link rel="stylesheet" href="styles.css?v=rt06-v6">
+  <!-- Versi CSS diperbarui -->
+  <link rel="stylesheet" href="styles.css?v=rt06-v7">
 
   <style>
     html,body{overflow-x:hidden}
@@ -51,7 +52,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="config.js?v=rt06-v5"></script>
-  <script defer src="app.js?v=rt06-v7"></script>
+
+  <!-- Versi app.js diperbarui -->
+  <script defer src="app.js?v=rt06-v8"></script>
 </head>
 
 <body>
@@ -218,8 +221,6 @@
 
       <section id="view-cash" class="view">
 
-        <!-- RINGKASAN -->
-
         <div class="stats-grid">
 
           <article class="stat-card stat-primary">
@@ -250,8 +251,6 @@
 
         <div class="content-grid">
 
-          <!-- PANEL UTAMA ARUS KAS -->
-
           <section class="panel">
 
             <div class="section-heading">
@@ -272,19 +271,13 @@
 
             </div>
 
-            <!-- FORM TRANSAKSI ADMIN DAN BENDAHARA -->
-
             <div id="cashAdminBox" class="admin-cash-box hidden">
 
               <h3 id="cashFormTitle">Catat transaksi</h3>
 
               <form id="cashForm" class="admin-form">
 
-                <input
-                  id="cashEditId"
-                  type="hidden"
-                  value=""
-                >
+                <input id="cashEditId" type="hidden" value="">
 
                 <div class="form-row">
 
@@ -295,7 +288,6 @@
 
                   <label>
                     Jenis
-
                     <select id="cashDirection">
                       <option value="masuk">Pemasukan</option>
                       <option value="keluar">Pengeluaran</option>
@@ -306,11 +298,9 @@
 
                 <label>
                   Akun/kategori
-
                   <select id="cashCategory" required>
                     <option value="">Pilih akun/kategori</option>
                   </select>
-
                   <span id="cashCategoryStatus" class="hint">
                     Memuat daftar akun…
                   </span>
@@ -338,7 +328,6 @@
 
                 <label id="cashCorrectionReasonWrap" class="hidden">
                   Alasan koreksi
-
                   <input
                     id="cashCorrectionReason"
                     maxlength="250"
@@ -366,16 +355,10 @@
 
                 </div>
 
-                <p
-                  id="cashFormMessage"
-                  class="message"
-                  role="status"
-                ></p>
+                <p id="cashFormMessage" class="message" role="status"></p>
 
               </form>
             </div>
-
-            <!-- FILTER ARUS KAS -->
 
             <div class="toolbar cash-toolbar">
 
@@ -386,10 +369,7 @@
                 aria-label="Cari transaksi"
               >
 
-              <select
-                id="cashPeriodPreset"
-                aria-label="Filter periode transaksi"
-              >
+              <select id="cashPeriodPreset" aria-label="Filter periode transaksi">
                 <option value="all">Semua periode</option>
                 <option value="today">Hari ini</option>
                 <option value="month">Bulan ini</option>
@@ -399,51 +379,29 @@
 
               <label class="date-filter">
                 Mulai
-                <input
-                  id="cashStartDate"
-                  type="date"
-                  aria-label="Tanggal mulai"
-                >
+                <input id="cashStartDate" type="date" aria-label="Tanggal mulai">
               </label>
 
               <label class="date-filter">
                 Sampai
-                <input
-                  id="cashEndDate"
-                  type="date"
-                  aria-label="Tanggal akhir"
-                >
+                <input id="cashEndDate" type="date" aria-label="Tanggal akhir">
               </label>
 
-              <select
-                id="cashCategoryFilter"
-                aria-label="Filter akun atau kategori"
-              >
+              <select id="cashCategoryFilter" aria-label="Filter akun atau kategori">
                 <option value="">Semua akun</option>
               </select>
 
-              <select
-                id="cashFilter"
-                aria-label="Filter jenis transaksi"
-              >
+              <select id="cashFilter" aria-label="Filter jenis transaksi">
                 <option value="">Semua jenis</option>
                 <option value="masuk">Pemasukan</option>
                 <option value="keluar">Pengeluaran</option>
               </select>
 
-              <button
-                id="printCash"
-                class="button button-secondary-dark"
-                type="button"
-              >
+              <button id="printCash" class="button button-secondary-dark" type="button">
                 Cetak Arus Kas
               </button>
 
-              <button
-                id="exportCash"
-                class="button button-primary"
-                type="button"
-              >
+              <button id="exportCash" class="button button-primary" type="button">
                 Ekspor Excel (CSV)
               </button>
 
@@ -455,12 +413,9 @@
               Memuat arus kas…
             </div>
 
-            <!-- TABEL TRANSAKSI -->
-
             <div class="table-wrap">
 
               <table>
-
                 <thead>
                   <tr>
                     <th>Tanggal</th>
@@ -472,9 +427,7 @@
                     <th>Aksi</th>
                   </tr>
                 </thead>
-
                 <tbody id="cashRows"></tbody>
-
               </table>
 
             </div>
@@ -489,17 +442,13 @@
 
           </section>
 
-          <!-- PANEL CATATAN PENTING -->
-
           <section class="panel">
 
             <div class="section-heading">
-
               <div>
                 <p class="eyebrow">RINGKASAN</p>
                 <h2>Catatan penting</h2>
               </div>
-
             </div>
 
             <p class="body-copy">
@@ -509,14 +458,11 @@
             </p>
 
             <div class="read-only-callout">
-
               <span aria-hidden="true">i</span>
-
               <p id="modeNote">
                 Mode baca untuk warga. Admin dan Bendahara dapat
                 mengelola transaksi kas sesuai hak akses.
               </p>
-
             </div>
 
           </section>
@@ -532,33 +478,24 @@
         <section class="panel report-panel">
 
           <div class="section-heading">
-
             <div>
               <p class="eyebrow">LAPORAN</p>
               <h2>LPJ Bulanan</h2>
-
               <p class="muted">
                 Dihitung dari transaksi kas pada bulan yang dipilih.
               </p>
             </div>
 
-            <button
-              id="printMonthly"
-              class="button button-secondary-dark"
-              type="button"
-            >
+            <button id="printMonthly" class="button button-secondary-dark" type="button">
               Cetak LPJ
             </button>
-
           </div>
 
           <div class="report-toolbar">
-
             <label>
               Bulan
               <input id="monthlyPeriod" type="month">
             </label>
-
           </div>
 
           <div id="monthlyReport" class="report-sheet"></div>
@@ -574,28 +511,20 @@
         <section class="panel report-panel">
 
           <div class="section-heading">
-
             <div>
               <p class="eyebrow">LAPORAN</p>
               <h2>LPJ Tahunan</h2>
-
               <p class="muted">
                 Ringkasan pemasukan dan pengeluaran per bulan.
               </p>
             </div>
 
-            <button
-              id="printYearly"
-              class="button button-secondary-dark"
-              type="button"
-            >
+            <button id="printYearly" class="button button-secondary-dark" type="button">
               Cetak LPJ
             </button>
-
           </div>
 
           <div class="report-toolbar">
-
             <label>
               Tahun
               <input
@@ -605,7 +534,6 @@
                 max="2100"
               >
             </label>
-
           </div>
 
           <div id="yearlyReport" class="report-sheet"></div>
@@ -621,11 +549,9 @@
         <section class="panel settings-panel">
 
           <div class="section-heading">
-
             <div>
               <p class="eyebrow">ADMIN</p>
               <h2>Pengaturan awal</h2>
-
               <p class="muted">
                 Atur identitas laporan dan dasar pencatatan kas.
                 Menu ini hanya dapat digunakan Admin.
@@ -635,12 +561,9 @@
             <span id="settingsMode" class="read-only-badge">
               Baca saja
             </span>
-
           </div>
 
           <div id="settingsAdminOnly" class="admin-grid">
-
-            <!-- IDENTITAS LPJ -->
 
             <div class="admin-card">
 
@@ -676,17 +599,11 @@
                   Simpan identitas
                 </button>
 
-                <p
-                  id="settingsFormMessage"
-                  class="message"
-                  role="status"
-                ></p>
+                <p id="settingsFormMessage" class="message" role="status"></p>
 
               </form>
 
             </div>
-
-            <!-- SALDO AWAL -->
 
             <div class="admin-card">
 
@@ -728,17 +645,11 @@
                   Tetapkan saldo awal
                 </button>
 
-                <p
-                  id="openingFormMessage"
-                  class="message"
-                  role="status"
-                ></p>
+                <p id="openingFormMessage" class="message" role="status"></p>
 
               </form>
 
             </div>
-
-            <!-- KATEGORI KAS -->
 
             <div class="admin-card">
 
@@ -763,7 +674,6 @@
 
                 <label>
                   Jenis
-
                   <select id="categoryDirection">
                     <option value="masuk">Pemasukan</option>
                     <option value="keluar">Pengeluaran</option>
@@ -774,19 +684,13 @@
                   Tambah kategori
                 </button>
 
-                <p
-                  id="categoryFormMessage"
-                  class="message"
-                  role="status"
-                ></p>
+                <p id="categoryFormMessage" class="message" role="status"></p>
 
               </form>
 
               <div id="categoryList" class="category-list"></div>
 
             </div>
-
-            <!-- RESET DATA -->
 
             <div class="admin-card admin-danger-card">
 
@@ -802,7 +706,6 @@
 
                 <label>
                   Ketik <strong>RESET RT06</strong> untuk konfirmasi
-
                   <input
                     id="resetConfirmation"
                     required
@@ -815,11 +718,7 @@
                   Reset data uji coba
                 </button>
 
-                <p
-                  id="resetFormMessage"
-                  class="message"
-                  role="status"
-                ></p>
+                <p id="resetFormMessage" class="message" role="status"></p>
 
               </form>
 
@@ -827,12 +726,8 @@
 
           </div>
 
-          <div
-            id="settingsReadOnly"
-            class="read-only-callout hidden"
-          >
+          <div id="settingsReadOnly" class="read-only-callout hidden">
             <span aria-hidden="true">i</span>
-
             <p>
               Mode warga hanya dapat melihat LPJ.
               Minta Admin mengatur identitas dan saldo awal.
