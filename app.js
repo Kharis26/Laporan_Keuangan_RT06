@@ -343,8 +343,9 @@
     renderCashCategoryFilter();
 
     const rows = filteredCash();
+const runningBalances = calculateRunningBalances(state.cash);
 
-    renderStats(rows);
+renderStats(rows);
 
     if ($("cashRows")) {
       $("cashRows").innerHTML = rows.length
