@@ -1,4 +1,3 @@
-JavaScript
 
 (() => {
   "use strict";
@@ -231,7 +230,8 @@ JavaScript
     }
   }
 
-  // Filter transaksi berdasarkan seluruh pilihan di toolbar.
+  // FILTER TRANSAKSI
+
   function filteredCash() {
     const term = (
       $("cashSearch")?.value || ""
@@ -283,12 +283,12 @@ JavaScript
         valid.length.toLocaleString("id-ID");
     }
 
-    // Tegaskan bahwa angka pertama adalah selisih transaksi terfilter,
-    // bukan saldo resmi keseluruhan buku kas.
-    const balanceCard = $("statBalance")?.closest(".stat-card");
+    const balanceCard =
+      $("statBalance")?.closest(".stat-card");
 
     if (balanceCard) {
-      const label = balanceCard.querySelector("span, p, small");
+      const label =
+        balanceCard.querySelector(".stat-label");
 
       if (label) {
         label.textContent = "Selisih bersih terfilter";
@@ -302,14 +302,12 @@ JavaScript
     if (!select) return;
 
     const previous = select.value;
-
     const names = new Set();
 
     state.categories.forEach((item) => {
       if (item.nama) names.add(item.nama);
     });
 
-    // Kategori transaksi lama tetap bisa difilter.
     state.cash.forEach((item) => {
       if (item.kategori) names.add(item.kategori);
     });
@@ -413,7 +411,6 @@ JavaScript
     }
   }
 
-  // Preset periode.
   function applyPeriodPreset(value) {
     const now = new Date();
     const todayString = localDateString(now);
@@ -936,6 +933,7 @@ JavaScript
       show("appPanel", false);
       show("logoutBtn", false);
       show("roleLabel", false);
+      setNotice("", "", false);
 
       if ($("activeEmail")) {
         $("activeEmail").textContent = "";
@@ -1267,7 +1265,10 @@ JavaScript
         return;
       }
 
-      state.settings = data || payload;
+      state.settings = data || {
+        nama_bendahara: payload.p_nama_bendahara,
+        nama_ketua_rt: payload.p_nama_ketua_rt
+      };
 
       setMessage(
         "settingsFormMessage",
@@ -1277,6 +1278,12 @@ JavaScript
 
       renderMonthly();
       renderYearly();
+    } catch (error) {
+      setMessage(
+        "settingsFormMessage",
+        error.message || "Gagal menyimpan identitas.",
+        "error"
+      );
     } finally {
       button.disabled = false;
     }
@@ -1351,6 +1358,12 @@ JavaScript
       event.currentTarget.reset();
 
       await loadData(state.sessionVersion);
+    } catch (error) {
+      setMessage(
+        "openingFormMessage",
+        error.message || "Gagal menetapkan saldo awal.",
+        "error"
+      );
     } finally {
       button.disabled = false;
     }
@@ -1401,6 +1414,12 @@ JavaScript
       event.currentTarget.reset();
 
       await loadData(state.sessionVersion);
+    } catch (error) {
+      setMessage(
+        "categoryFormMessage",
+        error.message || "Gagal menambahkan kategori.",
+        "error"
+      );
     } finally {
       button.disabled = false;
     }
@@ -1471,12 +1490,19 @@ JavaScript
       event.currentTarget.reset();
 
       await loadData(state.sessionVersion);
+    } catch (error) {
+      setMessage(
+        "resetFormMessage",
+        error.message || "Gagal menjalankan reset.",
+        "error"
+      );
     } finally {
       button.disabled = false;
     }
   }
 
-  // Perlindungan teks CSV dari formula spreadsheet.
+  // EKSPOR CSV
+
   function csvCell(value) {
     let text = String(value ?? "");
 
@@ -1593,6 +1619,8 @@ JavaScript
     window.print();
   }
 
+  // EVENT
+
   function bindEvents() {
     $("loginForm")?.addEventListener(
       "submit",
@@ -1625,6 +1653,10 @@ JavaScript
         );
 
         try {
+          if (!state.supabase) {
+            throw new Error("Koneksi Supabase belum siap.");
+          }
+
           const { error } =
             await state.supabase.auth.signInWithPassword({
               email,
@@ -1653,6 +1685,12 @@ JavaScript
               "error"
             );
           }
+        } catch (error) {
+          setMessage(
+            "loginMessage",
+            error.message || "Terjadi kesalahan saat login.",
+            "error"
+          );
         } finally {
           if (button) {
             button.disabled = false;
@@ -1664,7 +1702,16 @@ JavaScript
 
     $("logoutBtn")?.addEventListener(
       "click",
-      () => state.supabase.auth.signOut()
+      async () => {
+        if (!state.supabase) return;
+
+        const { error } =
+          await state.supabase.auth.signOut();
+
+        if (error) {
+          setNotice("Gagal keluar", error.message);
+        }
+      }
     );
 
     document.querySelectorAll(".navbtn").forEach(
@@ -1805,58 +1852,106 @@ JavaScript
     );
   }
 
-  async function init() {
-    bindEvents();
+  // INISIALISASI APLIKASI
 
-    if (
-      !isConfigured() ||
-      !window.supabase?.createClient
-    ) {
-      show("setupNotice", true);
+  async function init() {
+    try {
+      bindEvents();
+
+      if (
+        !isConfigured() ||
+        !window.supabase?.createClient
+      ) {
+        show("setupNotice", true);
+
+        if ($("connectionState")) {
+          $("connectionState").textContent =
+            "Konfigurasi belum siap";
+        }
+
+        return;
+      }
+
+      state.supabase = window.supabase.createClient(
+        cfg.url,
+        cfg.anonKey
+      );
 
       if ($("connectionState")) {
         $("connectionState").textContent =
-          "Konfigurasi belum siap";
+          "Supabase siap";
       }
 
-      return;
-    }
+      state.supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          window.setTimeout(() => {
+            profileAndLoad(session).catch((error) => {
+              console.error(
+                "Kesalahan pemeriksaan sesi:",
+                error
+              );
 
-    state.supabase = window.supabase.createClient(
-      cfg.url,
-      cfg.anonKey
+              if ($("connectionState")) {
+                $("connectionState").textContent =
+                  "Kesalahan sesi: " +
+                  (error.message || "Tidak diketahui");
+              }
+            });
+          }, 0);
+        }
+      );
+
+      const {
+        data: { session },
+        error
+      } = await state.supabase.auth.getSession();
+
+      if (error) {
+        throw error;
+      }
+
+      await profileAndLoad(session);
+
+      const initial =
+        window.location.hash.slice(1);
+
+      if (
+        ["cash", "monthly", "yearly", "settings"]
+          .includes(initial)
+      ) {
+        view(initial);
+      }
+
+    } catch (error) {
+      console.error(
+        "Kesalahan saat menjalankan aplikasi:",
+        error
+      );
+
+      if ($("connectionState")) {
+        $("connectionState").textContent =
+          "Kesalahan JavaScript: " +
+          (error.message || "Tidak diketahui");
+      }
+
+      setNotice(
+        "Aplikasi mengalami kesalahan",
+        error.message || "Periksa konfigurasi aplikasi."
+      );
+    }
+  }
+
+  init().catch((error) => {
+    console.error(
+      "Kesalahan utama aplikasi:",
+      error
     );
 
     if ($("connectionState")) {
       $("connectionState").textContent =
-        "Supabase siap";
+        "Aplikasi gagal dijalankan: " +
+        (error.message || "Tidak diketahui");
     }
+  });
 
-    state.supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        window.setTimeout(
-          () => profileAndLoad(session),
-          0
-        );
-      }
-    );
-
-    const {
-      data: { session }
-    } = await state.supabase.auth.getSession();
-
-    await profileAndLoad(session);
-
-    const initial =
-      window.location.hash.slice(1);
-
-    if (
-      ["cash", "monthly", "yearly", "settings"]
-        .includes(initial)
-    ) {
-      view(initial);
-    }
-  }
-
-  init();
 })();
