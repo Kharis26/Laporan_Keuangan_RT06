@@ -7,6 +7,13 @@
   <meta name="theme-color" content="#142b45">
   <meta name="description" content="Laporan keuangan Digital RT 06 RW 08.">
 
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Keuangan RT 06">
+  <meta name="apple-touch-fullscreen" content="yes">
+
   <title>Laporan Keuangan Digital RT 06 RW 08</title>
 
   <link rel="stylesheet" href="styles.css?v=rt06-v6">
@@ -844,6 +851,21 @@
     </section>
 
   </main>
+
+  <!-- PENDAFTARAN PWA -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+          .then((registration) => {
+            console.log("PWA aktif:", registration.scope);
+          })
+          .catch((error) => {
+            console.error("Pendaftaran PWA gagal:", error);
+          });
+      });
+    }
+  </script>
 
 </body>
 </html>
