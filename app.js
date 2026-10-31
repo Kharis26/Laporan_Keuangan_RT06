@@ -903,6 +903,10 @@ renderStats(rows);
               <span class="category-chip">
                 ${escapeHtml(item.nama)}
                 · ${escapeHtml(directionLabel(item.arah))}
+                <button type="button"
+                  class="button button-secondary"
+                  data-edit-category="${escapeHtml(item.id)}"
+                  ${isAdmin() ? "" : "disabled"}>Edit</button>
               </span>
             `).join("")
           : "Belum ada kategori.";
@@ -1984,6 +1988,11 @@ renderStats(rows);
       "submit",
       submitCategory
     );
+
+    $("categoryList")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-edit-category]");
+      if (button) editCategory(button.dataset.editCategory);
+    });
 
     $("resetForm")?.addEventListener(
       "submit",
