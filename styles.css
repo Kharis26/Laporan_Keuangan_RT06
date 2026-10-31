@@ -238,3 +238,52 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.topbar,.shell{width:100%;
   }
 }
 
+
+/* =========================================
+   PERBAIKAN CETAK PDF ARUS KAS
+   Tidak mengubah format cetak LPJ
+========================================= */
+
+@media print {
+
+  /* Tampilkan halaman Arus Kas yang sedang aktif */
+  #view-cash:not(.hidden) {
+    display: block !important;
+    visibility: visible !important;
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  #view-cash:not(.hidden) * {
+    visibility: visible !important;
+  }
+
+  /* Pastikan tabel Arus Kas ikut tercetak */
+  #view-cash:not(.hidden) table {
+    display: table !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  #view-cash:not(.hidden) thead {
+    display: table-header-group !important;
+  }
+
+  #view-cash:not(.hidden) tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #view-cash:not(.hidden) th,
+  #view-cash:not(.hidden) td {
+    border: 1px solid #777 !important;
+    color: #000 !important;
+    padding: 6px !important;
+  }
+
+  #view-cash:not(.hidden) th {
+    background: #eee !important;
+  }
+}
