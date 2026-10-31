@@ -1448,7 +1448,7 @@ renderStats(rows);
         "success"
       );
 
-      event.currentTarget.reset();
+      $("openingForm")?.reset();
 
       await loadData(state.sessionVersion);
     } catch (error) {
