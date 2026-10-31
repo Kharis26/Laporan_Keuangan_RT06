@@ -164,6 +164,44 @@
   }
 
   function balance(items) {
+    // Menghitung saldo berjalan setiap transaksi.
+function calculateRunningBalances(items) {
+  const sorted = [...items].sort((a, b) => {
+    const dateA = String(a.tanggal || "").slice(0, 10);
+    const dateB = String(b.tanggal || "").slice(0, 10);
+
+    if (dateA !== dateB) {
+      return dateA.localeCompare(dateB);
+    }
+
+    // Saldo awal diproses sebelum transaksi pada tanggal yang sama.
+    if (isOpening(a) !== isOpening(b)) {
+      return isOpening(a) ? -1 : 1;
+    }
+
+    return String(a.created_at || a.id || "")
+      .localeCompare(String(b.created_at || b.id || ""));
+  });
+
+  let currentBalance = 0;
+  const balances = new Map();
+
+  sorted.forEach((item) => {
+    if (item.status === "sah") {
+      if (isOpening(item)) {
+        currentBalance += Number(item.nominal || 0);
+      } else if (item.arah === "masuk") {
+        currentBalance += Number(item.nominal || 0);
+      } else if (item.arah === "keluar") {
+        currentBalance -= Number(item.nominal || 0);
+      }
+    }
+
+    balances.set(item.id, currentBalance);
+  });
+
+  return balances;
+}
     return sumOpening(items) +
       sumCash(items, "masuk") -
       sumCash(items, "keluar");
@@ -385,12 +423,13 @@ renderStats(rows);
                 <td><strong>${escapeHtml(item.kategori)}</strong></td>
                 <td>${escapeHtml(rupiah(item.nominal))}</td>
                 <td>${escapeHtml(item.keterangan || "—")}</td>
-                <td>${action}</td>
+<td><strong>${escapeHtml(rupiah(runningBalances.get(item.id) ?? 0))}</strong></td>
+<td>${action}</td>
               </tr>
             `;
           }).join("")
         : `<tr>
-             <td colspan="6" class="empty-cell">
+             <td colspan="7" class="empty-cell">
                Belum ada transaksi pada pilihan ini.
              </td>
            </tr>`;
