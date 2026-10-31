@@ -1513,6 +1513,87 @@ renderStats(rows);
       button.disabled = false;
     }
   }
+  async function editCategory(id) {
+  if (!isAdmin()) return;
+
+  const item = state.categories.find(
+    (category) => category.id === id
+  );
+
+  if (!item) {
+    setMessage(
+      "categoryFormMessage",
+      "Kategori tidak ditemukan.",
+      "error"
+    );
+    return;
+  }
+
+  const namaBaru = window.prompt(
+    `Ubah nama jenis akun "${item.nama}":`,
+    item.nama
+  );
+
+  if (namaBaru === null) return;
+
+  const nama = namaBaru.trim();
+
+  if (!nama) {
+    setMessage(
+      "categoryFormMessage",
+      "Nama kategori tidak boleh kosong.",
+      "error"
+    );
+    return;
+  }
+
+  if (nama === item.nama) {
+    setMessage(
+      "categoryFormMessage",
+      "Nama kategori tidak berubah."
+    );
+    return;
+  }
+
+  if (!window.confirm(
+    `Ubah nama "${item.nama}" menjadi "${nama}"?`
+  )) {
+    return;
+  }
+
+  try {
+    const { error } = await state.supabase.rpc(
+      "admin_ubah_nama_kategori",
+      {
+        p_id: id,
+        p_nama_baru: nama
+      }
+    );
+
+    if (error) {
+      setMessage(
+        "categoryFormMessage",
+        error.message || "Gagal mengubah nama kategori.",
+        "error"
+      );
+      return;
+    }
+
+    setMessage(
+      "categoryFormMessage",
+      "Nama jenis akun berhasil diubah.",
+      "success"
+    );
+
+    await loadData(state.sessionVersion);
+  } catch (error) {
+    setMessage(
+      "categoryFormMessage",
+      error.message || "Terjadi kesalahan saat mengubah kategori.",
+      "error"
+    );
+  }
+}
 
   async function submitReset(event) {
     event.preventDefault();
