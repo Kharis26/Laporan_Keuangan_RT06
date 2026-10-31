@@ -287,3 +287,105 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.topbar,.shell{width:100%;
     background: #eee !important;
   }
 }
+
+
+/* =========================================
+   FINAL FIX CETAK PDF
+   ARUS KAS + LPJ BULANAN + LPJ TAHUNAN
+========================================= */
+
+@media print {
+
+  /* Sembunyikan halaman yang tidak sedang dipilih */
+  #view-settings,
+  #view-monthly:not(.hidden),
+  #view-yearly:not(.hidden) {
+    display: none !important;
+  }
+
+  /* Tampilkan Arus Kas jika sedang dipilih */
+  #view-cash:not(.hidden) {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+  }
+
+  #view-cash:not(.hidden) .content-grid {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  #view-cash:not(.hidden) .content-grid > section:first-child {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  #view-cash:not(.hidden) .table-wrap {
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  #view-cash:not(.hidden) table {
+    display: table !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 9pt !important;
+  }
+
+  #view-cash:not(.hidden) thead {
+    display: table-header-group !important;
+  }
+
+  #view-cash:not(.hidden) tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #view-cash:not(.hidden) th,
+  #view-cash:not(.hidden) td {
+    padding: 6px !important;
+    border: 1px solid #dfe6ed !important;
+    color: #17283b !important;
+    white-space: normal !important;
+  }
+
+  #view-cash:not(.hidden) th {
+    background: #edf2f6 !important;
+  }
+
+  /* Sembunyikan kolom Aksi */
+  #view-cash:not(.hidden) th:last-child,
+  #view-cash:not(.hidden) td:last-child {
+    display: none !important;
+  }
+
+  /* Tampilkan periode cetak */
+  #view-cash:not(.hidden) .cash-print-period {
+    display: block !important;
+    margin-bottom: 12px !important;
+    font-weight: 600 !important;
+  }
+
+  /* Sembunyikan kontrol yang tidak diperlukan di PDF */
+  #view-cash:not(.hidden) .cash-toolbar,
+  #view-cash:not(.hidden) .cash-state,
+  #view-cash:not(.hidden) .admin-cash-box,
+  #view-cash:not(.hidden) .content-grid > section:nth-child(2),
+  #view-cash:not(.hidden) > .stats-grid {
+    display: none !important;
+  }
+}
