@@ -1149,6 +1149,11 @@ renderStats(rows);
     }
 
     $("cashCategory").value = item.kategori;
+    if ($("cashAllocations")) {
+      $("cashAllocations").innerHTML = "";
+      const account = state.categories.find((x) => x.nama === item.kategori);
+      addCashAllocationRow(account?.id || "", String(item.nominal));
+    }
     $("cashAmount").value = String(item.nominal);
     $("cashNote").value = item.keterangan || "";
 
@@ -1195,12 +1200,66 @@ renderStats(rows);
     }
 
     $("cashForm")?.reset();
+    if ($("cashAllocations")) {
+      $("cashAllocations").innerHTML = "";
+      addCashAllocationRow();
+    }
 
     if ($("cashDate")) {
       $("cashDate").value = localDateString();
     }
 
     setMessage("cashFormMessage", "");
+  }
+
+  function addCashAllocationRow(accountId = "", amount = "") {
+    const container = $("cashAllocations");
+    if (!container) return;
+    const row = document.createElement("div");
+    row.className = "form-row cash-allocation-row";
+    const select = document.createElement("select");
+    select.className = "cash-allocation-account";
+    select.required = true;
+    select.innerHTML = '<option value="">Pilih akun</option>' +
+      state.categories.map((item) =>
+        `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nama)} · ${escapeHtml(directionLabel(item.arah))}</option>`
+      ).join("");
+    select.value = accountId;
+    const input = document.createElement("input");
+    input.className = "cash-allocation-amount";
+    input.type = "number";
+    input.min = "1";
+    input.step = "1";
+    input.placeholder = "Nominal Rp";
+    input.required = true;
+    input.value = amount;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "button button-secondary";
+    remove.textContent = "Hapus";
+    remove.addEventListener("click", () => {
+      row.remove();
+      updateCashAllocationTotal();
+    });
+    select.addEventListener("change", updateCashAllocationTotal);
+    input.addEventListener("input", updateCashAllocationTotal);
+    row.append(select, input, remove);
+    container.appendChild(row);
+    updateCashAllocationTotal();
+  }
+
+  function updateCashAllocationTotal() {
+    const amounts = [...document.querySelectorAll(".cash-allocation-amount")]
+      .map((input) => Number(input.value) || 0);
+    const total = amounts.reduce((sum, amount) => sum + amount, 0);
+    if ($("cashAmount")) $("cashAmount").value = total || "";
+  }
+
+  function getCashAllocations() {
+    return [...document.querySelectorAll(".cash-allocation-row")].map((row) => ({
+      akun_id: row.querySelector(".cash-allocation-account")?.value || "",
+      nominal: Number(row.querySelector(".cash-allocation-amount")?.value)
+    }));
   }
 
   async function submitCash(event) {
@@ -1213,8 +1272,8 @@ renderStats(rows);
     const payload = {
       p_tanggal: $("cashDate").value,
       p_arah: $("cashDirection").value,
-      p_kategori: $("cashCategory").value.trim(),
       p_nominal: Number($("cashAmount").value),
+      p_alokasi: getCashAllocations(),
       p_keterangan:
         $("cashNote").value.trim() || null,
       p_bukti_path: null
@@ -1222,13 +1281,17 @@ renderStats(rows);
 
     if (
       !payload.p_tanggal ||
-      !payload.p_kategori ||
+      !payload.p_alokasi.length ||
+      payload.p_alokasi.some((x) =>
+        !x.akun_id || !Number.isSafeInteger(x.nominal) || x.nominal <= 0
+      ) ||
       !Number.isSafeInteger(payload.p_nominal) ||
-      payload.p_nominal <= 0
+      payload.p_nominal <= 0 ||
+      payload.p_alokasi.reduce((sum, x) => sum + x.nominal, 0) !== payload.p_nominal
     ) {
       setMessage(
         "cashFormMessage",
-        "Lengkapi tanggal, kategori, dan nominal yang benar.",
+        "Lengkapi tanggal dan setiap alokasi akun. Total nominal harus lebih dari nol.",
         "error"
       );
 
@@ -1249,6 +1312,7 @@ renderStats(rows);
         return;
       }
 
+      delete payload.p_alokasi;
       Object.assign(payload, {
         p_id: editId,
         p_alasan_koreksi: reason
@@ -1973,6 +2037,11 @@ renderStats(rows);
       "submit",
       submitCash
     );
+
+    $("addCashAllocation")?.addEventListener("click", () => addCashAllocationRow());
+    if ($("cashAllocations") && !$("cashAllocations").children.length) {
+      addCashAllocationRow();
+    }
 
     $("settingsForm")?.addEventListener(
       "submit",
