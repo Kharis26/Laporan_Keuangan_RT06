@@ -902,7 +902,6 @@ renderStats(rows);
           ? state.categories.map((item) => `
               <span class="category-chip">
                 ${escapeHtml(item.nama)}
-                · ${escapeHtml(directionLabel(item.arah))}
                 <button type="button"
                   class="button button-secondary"
                   data-edit-category="${escapeHtml(item.id)}"
