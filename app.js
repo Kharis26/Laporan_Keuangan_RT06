@@ -1347,7 +1347,7 @@ renderStats(rows);
             payload
           )
         : await state.supabase.rpc(
-            "catat_transaksi_kas",
+            "catat_transaksi_kas_alokasi",
             payload
           );
 
