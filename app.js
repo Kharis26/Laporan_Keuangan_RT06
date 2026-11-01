@@ -1009,7 +1009,12 @@ renderStats(rows);
     renderSettings();
     renderMonthly();
     renderYearly();
-  }
+
+    if ($("cashAllocations")) {
+      $("cashAllocations").innerHTML = "";
+      addCashAllocationRow();
+    }
+}
 
   async function profileAndLoad(session) {
     state.user = session?.user || null;
