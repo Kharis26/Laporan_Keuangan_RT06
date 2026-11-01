@@ -1005,6 +1005,7 @@ renderStats(rows);
         "Daftar akun belum tersedia. Periksa tabel kategori_kas di Supabase.";
     }
 
+    refreshCashAllocationOptions();
     renderCash();
     renderSettings();
     renderMonthly();
@@ -1246,6 +1247,21 @@ renderStats(rows);
     row.append(select, input, remove);
     container.appendChild(row);
     updateCashAllocationTotal();
+  }
+
+  function refreshCashAllocationOptions() {
+    document.querySelectorAll(".cash-allocation-row").forEach((row) => {
+      const select = row.querySelector(".cash-allocation-account");
+      if (!select) return;
+      const previous = select.value;
+      select.innerHTML = '<option value="">Pilih akun</option>' +
+        state.categories.map((item) =>
+          `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nama)} · ${escapeHtml(directionLabel(item.arah))}</option>`
+        ).join("");
+      if (state.categories.some((item) => String(item.id) === String(previous))) {
+        select.value = previous;
+      }
+    });
   }
 
   function updateCashAllocationTotal() {
