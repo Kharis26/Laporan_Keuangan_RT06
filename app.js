@@ -1226,9 +1226,9 @@ renderStats(rows);
     select.className = "cash-allocation-account";
     select.required = true;
     select.innerHTML = '<option value="">Pilih akun</option>' +
-      state.categories.map((item) =>
-        `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nama)} · ${escapeHtml(directionLabel(item.arah))}</option>`
-      ).join("");
+  state.categories.map((item) =>
+    `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nama)}</option>`
+  ).join("");
     select.value = accountId;
     const input = document.createElement("input");
     input.className = "cash-allocation-amount";
