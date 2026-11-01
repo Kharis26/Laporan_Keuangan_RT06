@@ -863,6 +863,7 @@ renderStats(rows);
       state.categories.map((item) => `
         <option value="${escapeHtml(item.nama)}">
           ${escapeHtml(item.nama)}
+          · ${escapeHtml(directionLabel(item.arah))}
         </option>
       `).join("");
 
@@ -901,6 +902,7 @@ renderStats(rows);
           ? state.categories.map((item) => `
               <span class="category-chip">
                 ${escapeHtml(item.nama)}
+                · ${escapeHtml(directionLabel(item.arah))}
                 <button type="button"
                   class="button button-secondary"
                   data-edit-category="${escapeHtml(item.id)}"
@@ -1007,13 +1009,8 @@ renderStats(rows);
     renderSettings();
     renderMonthly();
     renderYearly();
-
-    if ($("cashAllocations")) {
-      $("cashAllocations").innerHTML = "";
-      addCashAllocationRow();
-    }
   }
-}
+
   async function profileAndLoad(session) {
     state.user = session?.user || null;
     state.sessionVersion += 1;
@@ -1224,8 +1221,8 @@ renderStats(rows);
     select.className = "cash-allocation-account";
     select.required = true;
     select.innerHTML = '<option value="">Pilih akun</option>' +
-  state.categories.map((item) =>
-    `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nama)}</option>`
+      state.categories.map((item) =>
+        `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nama)} · ${escapeHtml(directionLabel(item.arah))}</option>`
       ).join("");
     select.value = accountId;
     const input = document.createElement("input");
