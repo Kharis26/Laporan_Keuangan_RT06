@@ -863,7 +863,6 @@ renderStats(rows);
       state.categories.map((item) => `
         <option value="${escapeHtml(item.nama)}">
           ${escapeHtml(item.nama)}
-          · ${escapeHtml(directionLabel(item.arah))}
         </option>
       `).join("");
 
