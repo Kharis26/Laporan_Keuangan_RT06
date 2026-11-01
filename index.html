@@ -48,6 +48,28 @@
     .login-simple .auth-card{
       width:min(100% - 24px,430px)
     }
+    .cash-allocation-row{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:8px;
+      align-items:center;
+      margin-bottom:10px
+    }
+    .cash-allocation-row .cash-allocation-account,
+    .cash-allocation-row .cash-allocation-amount{
+      grid-column:1 / -1;
+      width:100%;
+      min-width:0
+    }
+    .cash-allocation-row .cash-allocation-remove{
+      grid-column:2;
+      justify-self:end;
+      width:auto;
+      min-width:88px;
+      padding:8px 14px;
+      margin:0;
+      font-size:14px
+    }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -298,7 +320,7 @@
 
                 <div>
                   <label>Alokasi akun/kategori</label>
-                  <div id="cashAllocations" class="admin-form"></div>                  <select id="cashCategory" class="hidden"></select>
+                  <div id="cashAllocations" class="admin-form"></div>\n                  <select id="cashCategory" class="hidden"></select>
                   <button id="addCashAllocation" class="button button-secondary" type="button">
                     + Tambah akun
                   </button>
