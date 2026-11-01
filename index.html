@@ -54,7 +54,7 @@
   <script defer src="config.js?v=rt06-v5"></script>
 
   <!-- Versi app.js diperbarui -->
-  <script defer src="app.js?v=rt06-v9"></script>
+  <script defer src="app.js?v=rt06-v10"></script>
 </head>
 
 <body>
@@ -296,25 +296,20 @@
 
                 </div>
 
-                <label>
-                  Akun/kategori
-                  <select id="cashCategory" required>
-                    <option value="">Pilih akun/kategori</option>
-                  </select>
+                <div>
+                  <label>Alokasi akun/kategori</label>
+                  <div id="cashAllocations" class="admin-form"></div>\n                  <select id="cashCategory" class="hidden"></select>
+                  <button id="addCashAllocation" class="button button-secondary" type="button">
+                    + Tambah akun
+                  </button>
                   <span id="cashCategoryStatus" class="hint">
-                    Memuat daftar akun…
+                    Pilih akun dan nominal untuk setiap alokasi.
                   </span>
-                </label>
+                </div>
 
                 <label>
-                  Nominal
-                  <input
-                    id="cashAmount"
-                    type="number"
-                    min="1"
-                    step="1"
-                    required
-                  >
+                  Total transaksi (Rp)
+                  <input id="cashAmount" type="number" min="1" step="1" readonly required>
                 </label>
 
                 <label>
