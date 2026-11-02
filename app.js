@@ -9,6 +9,7 @@
     sessionVersion: 0,
     profile: null,
     cash: [],
+    allocations: [],
     settings: {
       nama_bendahara: "",
       nama_ketua_rt: ""
@@ -378,8 +379,42 @@
     }
   }
 
+  function renderAccountBalances() {
+    const tbody = $("accountBalanceRows");
+    const stateNode = $("accountBalanceState");
+    if (!tbody) return;
+
+    if (!state.categories.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Belum ada akun aktif.</td></tr>';
+      if (stateNode) stateNode.textContent = "Tambahkan akun terlebih dahulu di Pengaturan.";
+      return;
+    }
+
+    const transactionById = new Map(state.cash.map((item) => [String(item.id), item]));
+    const totals = new Map();
+    state.allocations.forEach((allocation) => {
+      const transaction = transactionById.get(String(allocation.transaksi_id));
+      if (!transaction || transaction.status !== "sah") return;
+      const accountId = String(allocation.akun_id);
+      const current = totals.get(accountId) || { masuk: 0, keluar: 0 };
+      if (transaction.arah === "masuk") current.masuk += Number(allocation.nominal || 0);
+      if (transaction.arah === "keluar") current.keluar += Number(allocation.nominal || 0);
+      totals.set(accountId, current);
+    });
+
+    tbody.innerHTML = state.categories.map((account) => {
+      const total = totals.get(String(account.id)) || { masuk: 0, keluar: 0 };
+      const saldo = total.masuk - total.keluar;
+      return `<tr><td><strong>${escapeHtml(account.nama)}</strong></td><td>${escapeHtml(directionLabel(account.arah))}</td><td>${escapeHtml(rupiah(total.masuk))}</td><td>${escapeHtml(rupiah(total.keluar))}</td><td><strong>${escapeHtml(rupiah(saldo))}</strong></td></tr>`;
+    }).join("");
+
+    const allocated = state.allocations.length;
+    if (stateNode) stateNode.textContent = `${state.categories.length} akun aktif · ${allocated} baris alokasi dimuat.`;
+  }
+
   function renderCash() {
     renderCashCategoryFilter();
+    renderAccountBalances();
 
     const rows = filteredCash();
 const runningBalances = calculateRunningBalances(state.cash);
@@ -957,7 +992,8 @@ renderStats(rows);
     const [
       cashResult,
       settingsResult,
-      categoriesResult
+      categoriesResult,
+      allocationsResult
     ] = await Promise.all([
       loadAllCashTransactions(),
 
@@ -971,7 +1007,11 @@ renderStats(rows);
         .from("kategori_kas")
         .select("id,nama,arah,aktif")
         .eq("aktif", true)
-        .order("nama")
+        .order("nama"),
+
+      state.supabase
+        .from("transaksi_kas_alokasi")
+        .select("transaksi_id,akun_id,nominal")
     ]);
 
     if (
@@ -1003,6 +1043,16 @@ renderStats(rows);
     } else if ($("cashCategoryStatus")) {
       $("cashCategoryStatus").textContent =
         "Daftar akun belum tersedia. Periksa tabel kategori_kas di Supabase.";
+    }
+
+    if (!allocationsResult.error) {
+      state.allocations = allocationsResult.data || [];
+    } else {
+      state.allocations = [];
+      if ($("accountBalanceState")) {
+        $("accountBalanceState").textContent =
+          `Saldo akun belum dapat dimuat: ${allocationsResult.error.message}`;
+      }
     }
 
     renderCash();
