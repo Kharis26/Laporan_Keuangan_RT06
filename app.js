@@ -385,7 +385,7 @@
     if (!tbody) return;
 
     if (!state.categories.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">Belum ada akun aktif.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">Belum ada akun aktif.</td></tr>';
       if (stateNode) stateNode.textContent = "Tambahkan akun terlebih dahulu di Pengaturan.";
       return;
     }
@@ -405,7 +405,7 @@
     tbody.innerHTML = state.categories.map((account) => {
       const total = totals.get(String(account.id)) || { masuk: 0, keluar: 0 };
       const saldo = total.masuk - total.keluar;
-      return `<tr><td><strong>${escapeHtml(account.nama)}</strong></td><td>${escapeHtml(directionLabel(account.arah))}</td><td>${escapeHtml(rupiah(total.masuk))}</td><td>${escapeHtml(rupiah(total.keluar))}</td><td><strong>${escapeHtml(rupiah(saldo))}</strong></td></tr>`;
+      return `<tr><td><strong>${escapeHtml(account.nama)}</strong></td><td>${escapeHtml(rupiah(total.masuk))}</td><td>${escapeHtml(rupiah(total.keluar))}</td><td><strong>${escapeHtml(rupiah(saldo))}</strong></td></tr>`;
     }).join("");
 
     const allocated = state.allocations.length;
@@ -898,7 +898,6 @@ renderStats(rows);
       state.categories.map((item) => `
         <option value="${escapeHtml(item.nama)}">
           ${escapeHtml(item.nama)}
-          · ${escapeHtml(directionLabel(item.arah))}
         </option>
       `).join("");
 
@@ -937,7 +936,6 @@ renderStats(rows);
           ? state.categories.map((item) => `
               <span class="category-chip">
                 ${escapeHtml(item.nama)}
-                · ${escapeHtml(directionLabel(item.arah))}
                 <button type="button"
                   class="button button-secondary"
                   data-edit-category="${escapeHtml(item.id)}"
@@ -1587,8 +1585,7 @@ renderStats(rows);
     if (!isAdmin()) return;
 
     const payload = {
-      p_nama: $("categoryName").value.trim(),
-      p_arah: $("categoryDirection").value
+      p_nama: $("categoryName").value.trim()
     };
 
     const button =
