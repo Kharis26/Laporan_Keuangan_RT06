@@ -271,6 +271,24 @@
 
         </div>
 
+        <section class="panel account-balance-panel" aria-labelledby="accountBalanceTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">RINGKASAN AKUN</p>
+              <h2 id="accountBalanceTitle">Saldo per akun</h2>
+              <p class="muted">Saldo dihitung dari alokasi transaksi kas yang sah.</p>
+            </div>
+          </div>
+          <div id="accountBalanceState" class="inline-state">Memuat saldo per akun…</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Akun</th><th>Jenis</th><th>Total masuk</th><th>Total keluar</th><th>Saldo akun</th></tr></thead>
+              <tbody id="accountBalanceRows"><tr><td colspan="5" class="empty-cell">Memuat…</td></tr></tbody>
+            </table>
+          </div>
+          <p class="hint">Saldo awal kas belum otomatis dibagi ke akun. Jika ada saldo awal, total saldo akun dapat berbeda dari saldo kas sampai saldo awal dialokasikan.</p>
+        </section>
+
         <div class="content-grid">
 
           <section class="panel">
