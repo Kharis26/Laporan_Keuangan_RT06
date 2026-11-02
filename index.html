@@ -642,52 +642,6 @@
 
             <div class="admin-card">
 
-              <h3>Saldo awal</h3>
-
-              <p class="hint">
-                Tetapkan satu kali saldo awal sebelum transaksi berjalan.
-              </p>
-
-              <form id="openingForm" class="admin-form">
-
-                <label>
-                  Tanggal
-                  <input id="openingDate" type="date" required>
-                </label>
-
-                <label>
-                  Nominal
-                  <input
-                    id="openingAmount"
-                    type="number"
-                    min="1"
-                    step="1"
-                    required
-                    placeholder="Contoh: 500000"
-                  >
-                </label>
-
-                <label>
-                  Keterangan
-                  <input
-                    id="openingNote"
-                    maxlength="200"
-                    placeholder="Saldo awal kas RT"
-                  >
-                </label>
-
-                <button class="button button-primary" type="submit">
-                  Tetapkan saldo awal
-                </button>
-
-                <p id="openingFormMessage" class="message" role="status"></p>
-
-              </form>
-
-            </div>
-
-            <div class="admin-card">
-
               <h3>Kategori akun kas</h3>
 
               <p class="hint">
@@ -757,7 +711,7 @@
             <span aria-hidden="true">i</span>
             <p>
               Mode warga hanya dapat melihat LPJ.
-              Minta Admin mengatur identitas dan saldo awal.
+              Minta Admin mengatur identitas aplikasi.
             </p>
           </div>
 
