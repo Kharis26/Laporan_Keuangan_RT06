@@ -1620,7 +1620,7 @@ renderStats(rows);
         "success"
       );
 
-      event.currentTarget.reset();
+      form.reset();
 
       await loadData(state.sessionVersion);
     } catch (error) {
@@ -1718,10 +1718,11 @@ renderStats(rows);
   async function submitReset(event) {
     event.preventDefault();
 
-    if (!isAdmin()) return;
+    const form = event.currentTarget;
+    if (!form || !isAdmin()) return;
 
     const confirmation =
-      $("resetConfirmation").value.trim();
+      $("resetConfirmation")?.value.trim() || "";
 
     if (confirmation !== "RESET RT06") {
       setMessage(
@@ -1777,7 +1778,7 @@ renderStats(rows);
         "success"
       );
 
-      event.currentTarget.reset();
+      form.reset();
 
       await loadData(state.sessionVersion);
     } catch (error) {
